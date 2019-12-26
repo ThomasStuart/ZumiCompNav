@@ -1,7 +1,6 @@
 import time
 import math
 
-
 # CONSTANTS
 DIV_CONST = 6.0
 WHITE_GRID_SIZE = 0.8
@@ -10,9 +9,9 @@ POWER = 40
 TURN_DURATION = 0.67
 
 # Globals
-currentlyPointing = 'E'
+currentlyPointing = 'N'
 currentX = 0
-currentY = 0
+currentY = 28
 
 
 class Point:
@@ -36,8 +35,10 @@ dict = {'S': Point(0, 0),
         'C': Point(25, 0),
         'D': Point(5, 10),
         'E': Point(15, 20),
-        'F': Point(20, 18)
-        }
+        'F': Point(20, 18),
+        'G': Point(0, 28),
+        'H': Point(10, 25),
+        'I': Point(28, 30)}
 
 
 def getTimeForTravel(dist):
@@ -56,42 +57,35 @@ def gridDistToInches(gVal):
 
 
 def plotCourse(gridDistX, gridDistY):
-    course = []
-    moveDir = ''
-    desiredDirectionX = ''
-    desiredDirectionY = ''
-    global currentX
+    global currentX  #global enables use of the variables outside of "plotcourse" fx
     global currentY
+    course = []      #list that will contain the directions for Zumi
+    moveDir = ''     # will hold a value of either 'x' or 'y'
+    desiredDirectionX = determineXdir(gridDistX)    # holds value either 'E' or 'W'
+    desiredDirectionY = determineYdir(gridDistY)    # holds value either 'N' or 'S'
 
+    #  calculate positioning
     checkNonCornerX = currentX % 10
     checkNonCornerY = currentY % 10
-
-    if (gridDistX > 0):
-        desiredDirectionX = 'E'
-    else:
-        desiredDirectionX = 'W'
-
-    if (gridDistY > 0):
-        desiredDirectionY = 'N'
-    else:
-        desiredDirectionY = 'S'
-
     currentX = currentX + gridDistX
     currentY = currentY + gridDistY
-
+    #  get Magnitude of the distance to travel in both directions
     gridDistX = abs(gridDistX)
     gridDistY = abs(gridDistY)
 
-
+    # Determine which direction Zumi will turn
     turnX = getTurnX(desiredDirectionX, desiredDirectionY, gridDistX, gridDistY)
     turnY = getTurnY(turnX ,gridDistX , gridDistY )
+    decision = 'x'
 
+    # Determine Zumi's first move.  Important if Zumi is in the middle of a block...
     if (checkNonCornerX != 0 and checkNonCornerY == 0):
         moveDir = 'y'
         course.append(Stride('x', 0, checkNonCornerX, desiredDirectionX))
         course.append(Stride('n', turnX, 0, 0))
         gridDistX = gridDistX - checkNonCornerX
     elif (checkNonCornerX == 0 and checkNonCornerY != 0):
+        decision = 'y'
         moveDir = 'x'
         course.append(Stride('y', 0, checkNonCornerY, desiredDirectionY))
         course.append(Stride('n', turnY, 0, 0))
@@ -99,8 +93,8 @@ def plotCourse(gridDistX, gridDistY):
     else:
         moveDir = 'x'
 
-    # moveToStartDirection(moveDir, desiredDirectionX, desiredDirectionY)
-
+    moveToStartDirection(decision, desiredDirectionX, desiredDirectionY)
+    #  While there is more distance to travel, create instructions to get to destination
     while (gridDistX + gridDistY > 0):
         turnToken = False
 
@@ -127,14 +121,12 @@ def plotCourse(gridDistX, gridDistY):
                 gridDistY = gridDistY - dy
                 course.append(Stride('y', turnY, dy, desiredDirectionY))
 
-
         # Alternate to next dir
         if (moveDir == 'x'):
             if turnToken and gridDistY != 0:
                 course.append(Stride('n', turnX, 0, 0))
             elif turnToken and gridDistY == 0:
                 course.append(Stride('n', 'S', 0, 0))
-
             moveDir = 'y'
         else:
             if turnToken and gridDistX != 0 :
@@ -143,9 +135,22 @@ def plotCourse(gridDistX, gridDistY):
                 course.append(Stride('n', 'S', 0, 0))
             moveDir = 'x'
 
-
     course.pop(len(course) - 1)
     return course
+
+
+def determineXdir( gridDistXdir ):
+    if( gridDistXdir > 0 ):
+        return 'E'
+    else:
+        return 'W'
+
+
+def determineYdir( gridDistYdir ):
+    if( gridDistYdir > 0 ):
+        return 'N'
+    else:
+        return 'S'
 
 
 def getTurnX(ang1, ang2, gx,gy):
@@ -165,30 +170,69 @@ def getTurnX(ang1, ang2, gx,gy):
 def getTurnY(dir, gx, gy):
     if gx == 0 or gy == 0:
         return 'S'
-
     if (dir == 'L'):
         return 'R'
     else:
         return 'L'
 
 
+def moveToStartDirection(moveDir, desiredDirectionX, desiredDirectionY):
+    global currentlyPointing
+    # if front of the car is facing wrong direction of intial moveDir
+    if (moveDir == 'x'):
+        if (desiredDirectionX == 'E' and currentlyPointing == 'N'):
+            print("left -> 90")
+            #zumi.turn_left(90)
+        elif (desiredDirectionX == 'W' and currentlyPointing == 'N'):
+            print("right -> 90")
+            #zumi.turn_right(90)
+        elif (desiredDirectionX == 'E' and currentlyPointing == 'S'):
+            print("right -> 90")
+            #zumi.turn_right(90)
+        elif (desiredDirectionX == 'W' and currentlyPointing == 'S'):
+            print("left -> 90")
+            #zumi.turn_left(90)
+        elif (desiredDirectionX == 'E' and currentlyPointing == 'W'):
+            print("left -> 180")
+            #zumi.turn_left(180)
+        elif (desiredDirectionX == 'W' and currentlyPointing == 'E'):
+            print("left -> 180")
+            #zumi.turn_left(180)
+    else:
+        if (desiredDirectionY == 'N' and currentlyPointing == 'E'):
+            print("right -> 90")
+            #zumi.turn_right(90)
+        elif (desiredDirectionY == 'S' and currentlyPointing == 'E'):
+            print("left -> 90")
+            #zumi.turn_left(90)
+        elif (desiredDirectionY == 'N' and currentlyPointing == 'W'):
+            print("left -> 90")
+            #zumi.turn_left(90)
+        elif (desiredDirectionY == 'S' and currentlyPointing == 'W'):
+            print("right -> 90")
+            #zumi.turn_right(90)
+        elif (desiredDirectionY == 'N' and currentlyPointing == 'S'):
+            print("left -> 180")
+            #zumi.turn_left(180)
+        elif (desiredDirectionY == 'S' and currentlyPointing == 'N'):
+            print("left -> 180")
+            #zumi.turn_left(180)
+
+
 # travelP2P moves zumi from one grid point
 # to another.
-# Logic:  points -> dist between points
-#        -> time needed to travel length
 def travelP2P(startX, startY, endX, endY):
     global currentlyPointing
-    # dx = endX - startX  (grid)
-    # dy = endY - startY  (grid)
     dxGrid = endX - startX
     dyGrid = endY - startY
 
     strides = plotCourse(dxGrid, dyGrid)
     print('length: ', len(strides))
     counter = 0
+
     while (len(strides) != 0):
         # distance is in INCHES not GRID (CONVERT)
-        print( "Stride: ", counter)
+        print("Stride: ", counter)
         counter = counter + 1
         print('\t dir       : ', strides[0].direction)
         print('\t dist moved: ', strides[0].gridDist)
@@ -201,9 +245,11 @@ def travelP2P(startX, startY, endX, endY):
             if dtToMoveInches != 0:
                 print("")
                 # zumi.forward(POWER, dtToMoveInches)
+                # zumi.turn_right(5)
 
             currentlyPointing = strides[0].NESW  # Useful for next movement
         else:
+
             # TODO: debug corner movement
             time.sleep(2)  # Wait 2 seconds
             # zumi.forward(40, TURN_DURATION)
@@ -223,18 +269,17 @@ def travelP2P(startX, startY, endX, endY):
 
 
 def getCoordinates(letter):
-    pt = dict[letter]
-    return pt
+    return dict[letter]
 
 
 def dest2dest(startLetterDest, endLetterDest):
-    # get coordinates for startDest
+    # get coordinates , two points (x1,y1) , for startDest
     pairStart = getCoordinates(startLetterDest)
-    # get coordinates for endDest
+    # get coordinates , two points (x2,y2) , for endDest
     pairEnd = getCoordinates(endLetterDest)
-    # carry out the point to point
+    # Have Zumi execute the course
     travelP2P(pairStart.x, pairStart.y, pairEnd.x, pairEnd.y)
-
+   
 
 # Go from dest S (start) to dest A (first home)
 print("-----S-A-----")
