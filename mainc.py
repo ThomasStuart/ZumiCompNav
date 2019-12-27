@@ -9,9 +9,9 @@ POWER = 40
 TURN_DURATION = 0.67
 
 # Globals
-currentlyPointing = 'N'
+currentlyPointing = 'E'
 currentX = 0
-currentY = 28
+currentY = 0
 
 
 class Point:
@@ -96,46 +96,43 @@ def plotCourse(gridDistX, gridDistY):
     moveToStartDirection(decision, desiredDirectionX, desiredDirectionY)
     #  While there is more distance to travel, create instructions to get to destination
     while (gridDistX + gridDistY > 0):
-        turnToken = False
+        addToken = False
 
         if (moveDir == 'x'):
-            if( gridDistX > 0):
-                turnToken = True
-                dx = 0
-                if (gridDistX >= 10):
-                    dx = 10
-                else:
-                    dx = gridDistX
+            if( gridDistX >= 10):
+                addToken = True
+                gridDistX = gridDistX - 10
+                course.append(Stride('x', turnX, 10, desiredDirectionX))
+            elif( gridDistX > 0 and gridDistY < 10 ):
+                addToken = True
+                course.append(Stride('x', turnX, gridDistX, desiredDirectionX))
+                gridDistX = 0
 
-                gridDistX = gridDistX - dx
-                course.append(Stride('x', turnX, dx, desiredDirectionX))
         else:
-            if(gridDistY > 0 ):
-                turnToken = True
-                dy = 0
-                if (gridDistY > 10):
-                    dy = 10
-                else:
-                    dy = gridDistY
-
-                gridDistY = gridDistY - dy
-                course.append(Stride('y', turnY, dy, desiredDirectionY))
+            if( gridDistY >= 10):
+                addToken = True
+                gridDistY = gridDistY - 10
+                course.append(Stride('y', turnY, 10, desiredDirectionY))
+            elif( gridDistY > 0 and gridDistX < 10 ):
+                addToken = True
+                course.append(Stride('y', turnY, gridDistY, desiredDirectionY))
+                gridDistY = 0
 
         # Alternate to next dir
         if (moveDir == 'x'):
-            if turnToken and gridDistY != 0:
-                course.append(Stride('n', turnX, 0, 0))
-            elif turnToken and gridDistY == 0:
+            if gridDistX != 0 and gridDistY < 10:
                 course.append(Stride('n', 'S', 0, 0))
+            elif addToken and gridDistY > 0 :
+                course.append(Stride('n', turnX, 0, 0))
             moveDir = 'y'
         else:
-            if turnToken and gridDistX != 0 :
-                course.append(Stride('n', turnY, 0, 0))
-            elif turnToken and gridDistY == 0:
+            if gridDistY != 0 and gridDistX < 10 :
                 course.append(Stride('n', 'S', 0, 0))
+            elif addToken and gridDistX > 0:
+                course.append(Stride('n', turnY, 0, 0))
             moveDir = 'x'
 
-    course.pop(len(course) - 1)
+
     return course
 
 
@@ -279,8 +276,9 @@ def dest2dest(startLetterDest, endLetterDest):
     pairEnd = getCoordinates(endLetterDest)
     # Have Zumi execute the course
     travelP2P(pairStart.x, pairStart.y, pairEnd.x, pairEnd.y)
-   
 
+##########
+#Test 1:
 # Go from dest S (start) to dest A (first home)
 print("-----S-A-----")
 dest2dest('S', 'A')
@@ -302,15 +300,18 @@ print()
 print("-----D-C-----")
 dest2dest('D', 'C')
 print("-----D-C-----")
-
-
 print()
 print()
 print("-----C-B-----")
 dest2dest('C', 'B')
 print("-----C-B-----")
+##########
 
-# letter destinations -> grid points
-# grid points -> distance between points
-# process a course by angles and distances
-# carry out the
+#Test 2:
+#dest2dest('E','I') # passed (0 destinations after )
+#Test 3:
+#dest2dest('G','F') # passed (0 destinations after )
+#Test 4:
+#dest2dest('H','C') # passed (0 destinations after )
+#Test 5:
+#dest2dest('S', 'I')# passed (0 destinations after )
